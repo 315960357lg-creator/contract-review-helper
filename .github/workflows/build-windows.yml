@@ -27,14 +27,15 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller build.spec --clean
+        pyinstaller build.spec --clean --noconfirm
 
     - name: Create release package
+      shell: pwsh
       run: |
-        mkdir release
-        copy dist\合同审查小助手.exe release\
-        copy 用户安装指南.md release\
-        copy README.md release\使用说明.md
+        New-Item -ItemType Directory -Force -Path release
+        Copy-Item dist\合同审查小助手.exe release\
+        Copy-Item 用户安装指南.md release\
+        Copy-Item README.md release\使用说明.md
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
@@ -75,13 +76,14 @@ jobs:
 
     - name: Build executable (32-bit)
       run: |
-        pyinstaller build.spec --clean --distfile dist-32bit
+        pyinstaller build.spec --clean --noconfirm --distpath dist-32bit
 
     - name: Create 32-bit package
+      shell: pwsh
       run: |
-        mkdir release-32bit
-        copy dist-32bit\合同审查小助手.exe release-32bit\合同审查小助手_32bit.exe
-        copy 用户安装指南.md release-32bit\
+        New-Item -ItemType Directory -Force -Path release-32bit
+        Copy-Item dist-32bit\合同审查小助手.exe release-32bit\合同审查小助手_32bit.exe
+        Copy-Item 用户安装指南.md release-32bit\
 
     - name: Upload 32-bit artifact
       uses: actions/upload-artifact@v3
