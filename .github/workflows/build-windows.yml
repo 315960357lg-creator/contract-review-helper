@@ -1,0 +1,99 @@
+name: Build Windows Executable
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller==6.3.0
+        pip install -r requirements.txt
+
+    - name: Build executable
+      run: |
+        pyinstaller build.spec --clean
+
+    - name: Create release package
+      run: |
+        mkdir release
+        copy dist\合同审查小助手.exe release\
+        copy 用户安装指南.md release\
+        copy README.md release\使用说明.md
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: contract-reviewer-windows
+        path: release/*
+        retention-days: 90
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-32bit:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python (32-bit)
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: 'x86'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller==6.3.0
+        pip install -r requirements.txt
+
+    - name: Build executable (32-bit)
+      run: |
+        pyinstaller build.spec --clean --distfile dist-32bit
+
+    - name: Create 32-bit package
+      run: |
+        mkdir release-32bit
+        copy dist-32bit\合同审查小助手.exe release-32bit\合同审查小助手_32bit.exe
+        copy 用户安装指南.md release-32bit\
+
+    - name: Upload 32-bit artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: contract-reviewer-windows-32bit
+        path: release-32bit/*
+        retention-days: 90
+
+    - name: Add to Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-32bit/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
